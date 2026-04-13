@@ -10,7 +10,7 @@ PLOT_DIR = os.path.join(OUTPUT_DIR, "plots")
 BEST_MODEL_DIR = os.path.join(CHECKPOINT_DIR, "best")
 
 # ======================== Model ========================
-MODEL_NAME = "shakechen/Llama-2-7b"
+MODEL_NAME = "/home/wuyifan/.cache/modelscope/hub/models/shakechen/Llama-2-7b-hf"
 
 # ======================== LoRA =========================
 LORA_R = 16
@@ -32,7 +32,7 @@ SEED = 42
 
 # =================== Inference =========================
 MAX_NEW_TOKENS = 32
-INFERENCE_BATCH_SIZE = 16
+INFERENCE_BATCH_SIZE = 24
 
 # ====================== Data ==========================
 VAL_RATIO = 0.2

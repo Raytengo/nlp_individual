@@ -81,6 +81,9 @@ def get_tokenizer(model_path):
 
 def get_model_path(model_name):
     """Download model from ModelScope if needed, return local path."""
+    import os
+    if os.path.exists(model_name):
+        return model_name
     try:
         from modelscope import snapshot_download
         model_dir = snapshot_download(model_name)

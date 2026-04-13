@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from transformers import AutoModelForCausalLM, TrainingArguments
 from peft import LoraConfig, get_peft_model
-from trl import SFTTrainer, DataCollatorForCompletionOnly
+from trl import SFTTrainer, DataCollatorForCompletionOnlyLM
 from datasets import Dataset
 
 from config import (
@@ -42,7 +42,7 @@ def load_model(model_path):
 
     model.config.use_cache = False
     model.config.pretraining_tp = 1
-    model.gradient_checkpointing_enable()
+    model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
     return model
 
 
@@ -113,11 +113,16 @@ def main():
         task_type="CAUSAL_LM",
     )
     model = get_peft_model(model, lora_config)
+    model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
     model.print_trainable_parameters()
 
     # ---- Data Collator (loss masking: only compute loss on answer tokens) ----
-    collator = DataCollatorForCompletionOnly(
-        response_template=RESPONSE_TEMPLATE,
+    # LLaMA tokenizer splits "### Answer:" differently in isolation vs in context.
+    # In context (after \n): tokens are [2277, 29937, 673, 29901] = ['##','#','Answer',':']
+    # We pass the token IDs directly so the collator can always find the boundary.
+    response_template_ids = [2277, 29937, 673, 29901]
+    collator = DataCollatorForCompletionOnlyLM(
+        response_template=response_template_ids,
         tokenizer=tokenizer,
     )
 

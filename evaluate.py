@@ -95,6 +95,7 @@ def load_model_for_eval(checkpoint_path):
         trust_remote_code=True,
     )
     model = PeftModel.from_pretrained(model, checkpoint_path)
+    model = model.merge_and_unload()
     model.eval()
 
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
