@@ -1,5 +1,6 @@
 import argparse
 import csv
+import gc
 import json
 import os
 import random
@@ -242,6 +243,12 @@ def main(run_config, skip_eval=False, skip_plot=False):
 
     if local_rank == 0:
         save_loss_logs(trainer, run_config.log_dir)
+
+        # Release training-time GPU memory before loading evaluation models.
+        del trainer
+        del model
+        gc.collect()
+        torch.cuda.empty_cache()
 
         if not skip_eval:
             from evaluate import evaluate_all_checkpoints
