@@ -3,6 +3,8 @@ from collections import Counter, defaultdict
 from sklearn.model_selection import train_test_split
 from transformers import AutoTokenizer
 
+from config import PROMPT_TEMPLATE
+
 # 6 groups of conflicting annotations — unified answers
 CONFLICT_RESOLUTIONS = {
     "Where are protons and neutrons located?": "nucleus",
@@ -64,11 +66,12 @@ def split_data(data, val_ratio=0.2, seed=42):
     return train_data, val_data
 
 
-def format_prompt(question, answer=None):
+def format_prompt(question, answer=None, prompt_template=PROMPT_TEMPLATE):
     """Format a single example into prompt string."""
+    prompt = prompt_template.format(question=question)
     if answer is not None:
-        return f"### Question: {question}\n### Answer: {answer}"
-    return f"### Question: {question}\n### Answer:"
+        return f"{prompt} {answer}"
+    return prompt
 
 
 def get_tokenizer(model_path):
