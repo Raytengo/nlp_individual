@@ -113,6 +113,7 @@ def compute_accuracy(predictions, examples):
 
 def load_model_for_eval(checkpoint_path, run_config):
     """Load base model + LoRA adapter for evaluation."""
+    import torch
     from peft import PeftModel
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
