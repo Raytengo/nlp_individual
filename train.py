@@ -3,6 +3,7 @@ import csv
 import json
 import os
 import random
+import shutil
 
 import numpy as np
 import torch
@@ -122,6 +123,40 @@ def save_run_config(run_config):
     print(f"[INFO] Run config saved to {run_config.config_path}")
 
 
+def get_response_template_ids(tokenizer, run_config):
+    """Derive response boundary token IDs from a prompt in context."""
+    prompt = format_prompt(
+        "PLACEHOLDER_QUESTION",
+        prompt_template=run_config.prompt_template,
+    )
+    if not prompt.endswith(run_config.response_template):
+        raise ValueError(
+            "Prompt template must end with the configured response template."
+        )
+
+    prompt_prefix = prompt[:-len(run_config.response_template)]
+    prefix_ids = tokenizer.encode(prompt_prefix, add_special_tokens=False)
+    full_prompt_ids = tokenizer.encode(prompt, add_special_tokens=False)
+    response_template_ids = full_prompt_ids[len(prefix_ids):]
+
+    if not response_template_ids:
+        raise ValueError("Failed to derive response template token IDs.")
+
+    return response_template_ids
+
+
+def reset_experiment_outputs(run_config):
+    """Remove stale artifacts before rerunning the same experiment."""
+    for path in [
+        run_config.checkpoint_dir,
+        run_config.log_dir,
+        run_config.plot_dir,
+        run_config.report_dir,
+    ]:
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+
+
 def main(run_config, skip_eval=False, skip_plot=False):
     from datasets import Dataset
     from peft import LoraConfig, get_peft_model
@@ -130,6 +165,7 @@ def main(run_config, skip_eval=False, skip_plot=False):
 
     set_seed(run_config.seed)
     local_rank = int(os.environ.get("LOCAL_RANK", 0))
+    reset_experiment_outputs(run_config)
 
     # ---- Data ----
     data = load_and_clean_data(run_config.data_path)
@@ -158,10 +194,7 @@ def main(run_config, skip_eval=False, skip_plot=False):
     model.print_trainable_parameters()
 
     # ---- Data Collator ----
-    response_template_ids = tokenizer.encode(
-        run_config.response_template,
-        add_special_tokens=False,
-    )
+    response_template_ids = get_response_template_ids(tokenizer, run_config)
     collator = DataCollatorForCompletionOnlyLM(
         response_template=response_template_ids,
         tokenizer=tokenizer,
